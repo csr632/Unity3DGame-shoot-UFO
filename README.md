@@ -9,6 +9,10 @@ A simple Unity3D game
 # 下载我的项目在本地查看！
 从[我的github](https://github.com/csr632/Unity3DGame-shoot-UFO)下载项目资源，将Assets文件夹覆盖你的项目中的Assets文件夹，然后在U3D中双击“hw5”，就可以运行了！
 
+# 学会使用他人的资源
+这个游戏有一些资源是从外部导入的，比如说RigidBodyFPSController（第一人称控制器，可以像CS一样控制主角）来自标准资源库的Characters包（在[这篇文章](http://www.jianshu.com/p/5a572a61f809)中我教大家导入了标准资源的Environments包）。
+
+枪支的预制和爆炸的预制，是从Asset Store中免费下载的资源，下载好之后会弹出选择框，让你从下载的资源包中选择自己需要的资源。适当地使用他人的资源能够让你专注于自己的游戏内容。
 
 # 玩家输入、使用射线
 在Update中使用[Input.GetButton(string buttonName)](https://docs.unity3d.com/ScriptReference/Input.GetButton.html)，在某一帧如果这个按键出于按下状态，就返回true，否则返回false。通过这个方式来监测用户的输入并做出反应。
