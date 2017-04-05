@@ -21,6 +21,8 @@ public class FirstController : MonoBehaviour, SceneController
 
     void Awake()
     {
+        // 挂载各种控制组件
+
         director = Director.getInstance();
         director.currentSceneController = this;
 
@@ -38,6 +40,7 @@ public class FirstController : MonoBehaviour, SceneController
     }
     public void loadResources()
     {
+        // 初始化场景中的物体
         new FirstCharacterController();
         Instantiate(Resources.Load("Terrain"));
     }
@@ -49,15 +52,18 @@ public class FirstController : MonoBehaviour, SceneController
 
     void Update()
     {
-        timeAfterRoundStart += Time.deltaTime;
-        if (roundHasStarted && checkAllUFOIsShot())
+        if (roundHasStarted) {
+            timeAfterRoundStart += Time.deltaTime;
+        }
+
+        if (roundHasStarted && checkAllUFOIsShot()) // 检查是否所有UFO都已经被击落
         {
             print("All UFO is shot down! Next round in 3 sec");
             roundHasStarted = false;
             Invoke("roundStart", 3);
             difficultyManager.setDifficultyByScore(scorer.getScore());
         }
-        else if (roundHasStarted && checkTimeOut())
+        else if (roundHasStarted && checkTimeOut()) // 检查这一轮是否已经超时
         {
             print("Time out! Next round in 3 sec");
             roundHasStarted = false;
@@ -72,7 +78,8 @@ public class FirstController : MonoBehaviour, SceneController
     }
 
     void roundStart()
-    {
+    {   
+        // 开始新的一轮
         roundHasStarted = true;
         timeAfterRoundStart = 0;
         UFOController[] ufoCtrlArr = UFOfactory.produceUFOs(difficultyManager.getUFOAttributes(), difficultyManager.UFONumber);
@@ -99,14 +106,15 @@ public class FirstController : MonoBehaviour, SceneController
 
     public void UFOIsShot(UFOController UFOCtrl)
     {
+        // 响应UFO被击中的事件
         scorer.record(difficultyManager.getDifficulty());
-
         actionManager.removeActionOf(UFOCtrl.getObj());
         UFOfactory.recycle(UFOCtrl);
         explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
     }
 
     public void GroundIsShot(Vector3 pos) {
+        // 响应地面被击中的事件（直接产生一个爆炸）
         explosionFactory.explodeAt(pos);
     }
 }
