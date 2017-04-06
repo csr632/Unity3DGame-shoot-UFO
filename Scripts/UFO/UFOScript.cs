@@ -15,11 +15,10 @@ public class UFOScript: MonoBehaviour
             g.AddComponent<UFOScript>().ctrl = ctrl;
         }
     }
-    // public void onClick()
-    // {
-    //     // Debug.Log(gameObject.name);
-    //     ctrl.onClick();
-    // }
 
-    
+    public void OnCollisionEnter(Collision col) {
+        if (col.gameObject.layer == LayerMask.NameToLayer("RayFinish")) {
+            ctrl.crash();
+        }
+    }
 }

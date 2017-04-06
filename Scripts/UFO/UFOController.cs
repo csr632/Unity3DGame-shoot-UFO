@@ -36,4 +36,17 @@ public class UFOController
         } 
     }
 
+    public void setPosition(Vector3 pos) {
+        Rigidbody rigi = gameObject.GetComponent<Rigidbody>();
+        if (rigi) {
+            rigi.MovePosition(pos);
+        }
+        else {
+            gameObject.transform.position = pos;
+        }
+    }
+
+    public void crash() {
+        Singleton<FirstController>.Instance.UFOCrash(this);
+    }
 }

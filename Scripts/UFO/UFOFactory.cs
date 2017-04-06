@@ -16,7 +16,7 @@ public class UFOFactory : MonoBehaviour
         freeQueue = new Queue<UFOController>();
         usingList = new List<UFOController>();
 
-        originalUFO = Instantiate(Resources.Load("ufo", typeof(GameObject))) as GameObject;
+        originalUFO = Instantiate(Resources.Load("UFO", typeof(GameObject))) as GameObject;
         originalUFO.SetActive(false);
     }
 
@@ -28,7 +28,8 @@ public class UFOFactory : MonoBehaviour
             // print("Instantiate");
             GameObject newObj = GameObject.Instantiate(originalUFO);
             newUFO = new UFOController(newObj);
-            newObj.transform.position += Vector3.forward * Random.value * 5;
+            newUFO.getObj().name = "UFO"+count;
+            // newObj.transform.position += Vector3.forward * Random.value * 20;
             count++;
         }
         else                            // 如果有UFO空闲，则取出这个UFO

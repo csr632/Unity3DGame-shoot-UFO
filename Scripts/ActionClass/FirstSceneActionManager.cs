@@ -27,9 +27,9 @@ public class FirstSceneActionManager : ActionManager
         addAction(gameObj, sequenceAction, this);
     }
 
-    public void addRandomActionForArr(UFOController[] arr, float speed) {
-        for (int i = 0; i < arr.Length; i++) {
-            addRandomAction(arr[i].getObj(), speed);
-        }
-    }
+    // public void addRandomActionForArr(GameObject[] arr, float speed) {
+    //     for (int i = 0; i < arr.Length; i++) {
+    //         addRandomAction(arr[i], speed);
+    //     }
+    // }
 }

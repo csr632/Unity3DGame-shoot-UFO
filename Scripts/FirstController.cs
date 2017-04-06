@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Com.MyGameFramework;
-
+using UnityEngine.UI;
 
 public class FirstController : MonoBehaviour, SceneController
 {
@@ -10,14 +10,19 @@ public class FirstController : MonoBehaviour, SceneController
     UFOFactory UFOfactory;
 
     ExplosionFactory explosionFactory;
-    FirstSceneActionManager actionManager;
-
+    ActionManagerTarget actionManagerTarget;
+	int whichActionManager = 0; // 0->normal, 1->physics
+    bool switchAMInNextRound = false;
     Scorer scorer;
 
     DifficultyManager difficultyManager;
 
     float timeAfterRoundStart = 10;
     bool roundHasStarted = false;
+
+    FirstCharacterController firstCharacterController;
+
+    Text hint;
 
     void Awake()
     {
@@ -26,7 +31,9 @@ public class FirstController : MonoBehaviour, SceneController
         director = Director.getInstance();
         director.currentSceneController = this;
 
-        actionManager = gameObject.AddComponent<FirstSceneActionManager>();
+        // actionManager = gameObject.AddComponent<FirstSceneActionManager>();
+        actionManagerTarget = new ActionManagerAdapter(gameObject);
+        whichActionManager = 0;
 
         UFOfactory = gameObject.AddComponent<UFOFactory>();
 
@@ -37,12 +44,15 @@ public class FirstController : MonoBehaviour, SceneController
 
 
         loadResources();
+        Physics.IgnoreLayerCollision(LayerMask.NameToLayer("Shootable"), LayerMask.NameToLayer("Shootable"), true);
     }
     public void loadResources()
     {
         // 初始化场景中的物体
-        new FirstCharacterController();
+        firstCharacterController = new FirstCharacterController();
         Instantiate(Resources.Load("Terrain"));
+        hint = (Instantiate(Resources.Load("ShowResult")) as GameObject).GetComponentInChildren<Text>();
+        hint.text = "";
     }
 
     public void Start()
@@ -58,36 +68,54 @@ public class FirstController : MonoBehaviour, SceneController
 
         if (roundHasStarted && checkAllUFOIsShot()) // 检查是否所有UFO都已经被击落
         {
-            print("All UFO is shot down! Next round in 3 sec");
+            hint.text = "All UFO has crashed in this round! Next round in 3 sec";
             roundHasStarted = false;
             Invoke("roundStart", 3);
             difficultyManager.setDifficultyByScore(scorer.getScore());
         }
         else if (roundHasStarted && checkTimeOut()) // 检查这一轮是否已经超时
         {
-            print("Time out! Next round in 3 sec");
+            hint.text = "Time out! Next round in 3 sec";
             roundHasStarted = false;
             foreach (UFOController ufo in UFOfactory.getUsingList())
             {
-                actionManager.removeActionOf(ufo.getObj());
+                actionManagerTarget.removeActionOf(ufo.getObj(), new Dictionary<string, object>() {
+                    {"whichActionManager", whichActionManager}
+                });
             }
             UFOfactory.recycleAll();
             Invoke("roundStart", 3);
             difficultyManager.setDifficultyByScore(scorer.getScore());
+        }
+        if (Input.GetButtonDown("Fire2")) {
+            hint.text = "Action of UFOs will change in the next round!";
+            switchAMInNextRound = true;
         }
     }
 
     void roundStart()
     {   
         // 开始新的一轮
+        if (switchAMInNextRound) {
+            switchAMInNextRound = false;
+            whichActionManager = 1-whichActionManager;
+        }
+
         roundHasStarted = true;
         timeAfterRoundStart = 0;
         UFOController[] ufoCtrlArr = UFOfactory.produceUFOs(difficultyManager.getUFOAttributes(), difficultyManager.UFONumber);
         for (int i = 0; i < ufoCtrlArr.Length; i++)
         {
             ufoCtrlArr[i].appear();
+            ufoCtrlArr[i].setPosition(getRandomUFOPosition());
         }
-        actionManager.addRandomActionForArr(ufoCtrlArr, ufoCtrlArr[0].attr.speed);
+
+        actionManagerTarget.addActionForArr(ufoCtrlArr, new Dictionary<string, object>() {
+            {"whichActionManager", whichActionManager},
+            {"speed", ufoCtrlArr[0].attr.speed},
+            {"force", new Vector3(0, -1, 0)}
+        });
+        hint.text = "";
     }
 
     bool checkTimeOut()
@@ -108,7 +136,9 @@ public class FirstController : MonoBehaviour, SceneController
     {
         // 响应UFO被击中的事件
         scorer.record(difficultyManager.getDifficulty());
-        actionManager.removeActionOf(UFOCtrl.getObj());
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>() {
+            {"whichActionManager", whichActionManager}
+        });
         UFOfactory.recycle(UFOCtrl);
         explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
     }
@@ -116,5 +146,18 @@ public class FirstController : MonoBehaviour, SceneController
     public void GroundIsShot(Vector3 pos) {
         // 响应地面被击中的事件（直接产生一个爆炸）
         explosionFactory.explodeAt(pos);
+    }
+
+    public void UFOCrash(UFOController UFOCtrl) {
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>() {
+            {"whichActionManager", whichActionManager}
+        });
+        UFOfactory.recycle(UFOCtrl);
+        explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
+    }
+
+    public Vector3 getRandomUFOPosition() {
+        Vector3 relativeToCharacter = new Vector3(Random.Range(-10, 10), Random.Range(10, 15), Random.Range(-10, 10));
+        return firstCharacterController.getPosition()+relativeToCharacter;
     }
 }
