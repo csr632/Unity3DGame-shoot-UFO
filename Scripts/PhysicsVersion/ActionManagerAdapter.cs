@@ -6,14 +6,20 @@ public class ActionManagerAdapter: ActionManagerTarget {
 	FirstSceneActionManager normalAM;
 	PhysicsActionManager PhysicsAM;
 
+	int whichActionManager = 0; // 0->normal, 1->physics
 
 	public ActionManagerAdapter(GameObject main) {
 		normalAM = main.AddComponent<FirstSceneActionManager>();
 		PhysicsAM = main.AddComponent<PhysicsActionManager>();
+		whichActionManager = 0;
+	}
+
+	public void switchActionMode() {
+		whichActionManager = 1-whichActionManager;
 	}
 
 	public void addAction(GameObject gameObj, Dictionary<string, object> option) {
-		if (option["whichActionManager"].Equals(0))
+		if (whichActionManager == 0)
 		//	use normalAM
 		{
 			Debug.Log("use normalAM");
@@ -29,7 +35,7 @@ public class ActionManagerAdapter: ActionManagerTarget {
 	}
 
 	public void addActionForArr(GameObject[] Arr, Dictionary<string, object> option) {
-		if (option["whichActionManager"].Equals(0))
+		if (whichActionManager == 0)
 		//	use normalAM
 		{
 			Debug.Log("use normalAM");
@@ -51,7 +57,7 @@ public class ActionManagerAdapter: ActionManagerTarget {
 	}
 
 	public void addActionForArr(UFOController[] Arr, Dictionary<string, object> option) {
-		if (option["whichActionManager"].Equals(0))
+		if (whichActionManager == 0)
 		//	use normalAM
 		{
 			Debug.Log("use normalAM");
@@ -73,7 +79,7 @@ public class ActionManagerAdapter: ActionManagerTarget {
 	}
 
 	public void removeActionOf(GameObject gameObj, Dictionary<string, object> option){
-		if (option["whichActionManager"].Equals(0))
+		if (whichActionManager == 0)
 		//	use normalAM
 		{
 			Debug.Log("use normalAM");

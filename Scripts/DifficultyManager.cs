@@ -7,13 +7,14 @@ public class DifficultyManager
 {
     private int currentDifficulty = 0;  // 0~2
     public float currentSendInterval;
-
-    // float[] sendUFOInterval = {4, 3, 2.5F};
     public readonly int UFONumber = 10;
     float[] sendUFOInterval = { 10, 9, 8 };
     float[] UFOScale = { 0.9F, 0.9F, 0.9F };
     float[] UFOSpeed = { 5, 8, 10 };
     Color[] UFOColor = { Color.red, Color.blue, Color.gray };
+    
+    // 物理模式时，UFO受到的向下的力的大小
+    Vector3 gravity = new Vector3(0, -1, 0);
 
     public Text difficultyText;
 
@@ -96,5 +97,9 @@ public class DifficultyManager
     {
         currentDifficulty = 0;
         currentSendInterval = sendUFOInterval[currentDifficulty];
+    }
+
+    public Vector3 getGravity() {
+        return gravity;
     }
 }

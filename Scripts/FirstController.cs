@@ -11,7 +11,7 @@ public class FirstController : MonoBehaviour, SceneController
 
     ExplosionFactory explosionFactory;
     ActionManagerTarget actionManagerTarget;
-	int whichActionManager = 0; // 0->normal, 1->physics
+	
     bool switchAMInNextRound = false;
     Scorer scorer;
 
@@ -33,7 +33,6 @@ public class FirstController : MonoBehaviour, SceneController
 
         // actionManager = gameObject.AddComponent<FirstSceneActionManager>();
         actionManagerTarget = new ActionManagerAdapter(gameObject);
-        whichActionManager = 0;
 
         UFOfactory = gameObject.AddComponent<UFOFactory>();
 
@@ -79,9 +78,7 @@ public class FirstController : MonoBehaviour, SceneController
             roundHasStarted = false;
             foreach (UFOController ufo in UFOfactory.getUsingList())
             {
-                actionManagerTarget.removeActionOf(ufo.getObj(), new Dictionary<string, object>() {
-                    {"whichActionManager", whichActionManager}
-                });
+                actionManagerTarget.removeActionOf(ufo.getObj(), new Dictionary<string, object>());
             }
             UFOfactory.recycleAll();
             Invoke("roundStart", 3);
@@ -98,7 +95,7 @@ public class FirstController : MonoBehaviour, SceneController
         // 开始新的一轮
         if (switchAMInNextRound) {
             switchAMInNextRound = false;
-            whichActionManager = 1-whichActionManager;
+            actionManagerTarget.switchActionMode();
         }
 
         roundHasStarted = true;
@@ -111,9 +108,8 @@ public class FirstController : MonoBehaviour, SceneController
         }
 
         actionManagerTarget.addActionForArr(ufoCtrlArr, new Dictionary<string, object>() {
-            {"whichActionManager", whichActionManager},
             {"speed", ufoCtrlArr[0].attr.speed},
-            {"force", new Vector3(0, -1, 0)}
+            {"force", difficultyManager.getGravity()}
         });
         hint.text = "";
     }
@@ -136,9 +132,7 @@ public class FirstController : MonoBehaviour, SceneController
     {
         // 响应UFO被击中的事件
         scorer.record(difficultyManager.getDifficulty());
-        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>() {
-            {"whichActionManager", whichActionManager}
-        });
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>());
         UFOfactory.recycle(UFOCtrl);
         explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
     }
@@ -149,9 +143,7 @@ public class FirstController : MonoBehaviour, SceneController
     }
 
     public void UFOCrash(UFOController UFOCtrl) {
-        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>() {
-            {"whichActionManager", whichActionManager}
-        });
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>());
         UFOfactory.recycle(UFOCtrl);
         explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
     }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public interface ActionManagerTarget {
+
+	void switchActionMode();
+	
 	void addAction(GameObject gameObj, Dictionary<string, object> option);
 
 	void addActionForArr(GameObject[] Arr, Dictionary<string, object> option);
