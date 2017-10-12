@@ -1,207 +1,207 @@
 # Unity3DGame-shoot-UFO
 A simple Unity3D game
 
-这次我们重新制作一个小游戏，用来学习玩家输入、使用射线、使用工厂来获取和回收对象。
+# 改进描述
+在[我们之前完成的飞碟游戏](http://www.jianshu.com/p/58af7f81c2e8)中，UFO是在两点之间来回飞行，我们是通过修改position来使得飞碟运动起来的。
+
+现在，为了练习对Unity物理引擎的使用和适配器模式的使用，我们想要加入另一种飞碟运动模式：**物理运动模式**，飞碟受到向下的力，向地面撞去。玩家要在飞碟撞到地面之前击中飞碟才能得分，飞碟撞上地面则不得分。
+
+并且，我们不仅要实现物理运动模式，还要保留着原本的普通运动模式，通过**鼠标右键**，用户可以在两种模式之间切换。
+
 # 游戏截图
-![](http://upload-images.jianshu.io/upload_images/4888929-1ec7b022805bfd79.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-![](http://upload-images.jianshu.io/upload_images/4888929-6a763c4a3755f0ed.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![正常运动模式下飞碟来回飞行](http://upload-images.jianshu.io/upload_images/4888929-bba6a5cad8420a2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-# 下载我的项目在本地查看！
-从[我的github](https://github.com/csr632/Unity3DGame-shoot-UFO)下载项目资源，将Assets文件夹覆盖你的项目中的Assets文件夹，然后在U3D中双击“hw5”，就可以运行了！
+![鼠标右键可以切换运动模式](http://upload-images.jianshu.io/upload_images/4888929-3f1ac0ccbb075bad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-# 学会使用他人的资源
-这个游戏有一些资源是从外部导入的，比如说RigidBodyFPSController（第一人称控制器，可以像CS一样控制主角）来自标准资源库的Characters包（在[这篇文章](http://www.jianshu.com/p/5a572a61f809)中我教大家导入了标准资源的Environments包）。
 
-枪支的预制和爆炸的预制，是从Asset Store中免费下载的资源，下载好之后会弹出选择框，让你从下载的资源包中选择自己需要的资源。适当地使用他人的资源能够让你专注于自己的游戏内容。
+![物理模式下飞碟会缓缓掉落地面](http://upload-images.jianshu.io/upload_images/4888929-8040ff29becd5d19.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-# 玩家输入、使用射线
-在Update中使用[Input.GetButton(string buttonName)](https://docs.unity3d.com/ScriptReference/Input.GetButton.html)，在某一帧如果这个按键出于按下状态，就返回true，否则返回false。通过这个方式来监测用户的输入并做出反应。
-> 使用GetButton可以得到“扫射”的效果，也就是说如果你按着这个键不放，那么就一直返回true。[Input.GetButtonDown](https://docs.unity3d.com/ScriptReference/Input.GetButtonDown.html)则不一样，只有你“按下”的那一帧会返回true，只能得到“点射”的效果。
-Input还可以监测键盘按键、鼠标移动等，其他的使用方式可以查找[官方文档](https://docs.unity3d.com/ScriptReference/Input.html)或搜索其他博客，这里我们专注于这个小游戏。
+# 在自己的电脑上运行这个游戏！
+从[我的github](https://github.com/csr632/Unity3DGame-shoot-UFO/tree/Improvement1_PhysicalUFO)下载项目资源，将所有文件放进你的项目的Assets文件夹（如果有重复则覆盖），然后在U3D中双击“hw5”，就可以运行了！
 
-射线：
-``` C#
-Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-RaycastHit hit;
-if (Physics.Raycast(ray, out hit))
-{
-        // do something
+# 实现物理模式的动作管理器
+这次的改进有一点特别。**正常运动模式不能删除，而是与新的物理运动模式共存，我们要在游戏运行的时候来决定使用哪种运动模式**。也就是说，原本的动作管理器类不能删除，它们是管理正常运动模式的。我们还要再实现一个动作管理器，用来管理物理运动模式。最后想一种办法将两个动作管理器结合起来。
+首先我们实现物理模式动作管理器:
+```
+public class PhysicsActionManager : MonoBehaviour {
+
+	public void addForce(GameObject gameObj, Vector3 force) {
+		ConstantForce originalForce = gameObj.GetComponent<ConstantForce>();
+		if (originalForce) {
+			originalForce.enabled = true;
+			originalForce.force = force;
+		} else {
+			gameObj.AddComponent<Rigidbody>().useGravity = false;
+			gameObj.AddComponent<ConstantForce>().force = force;
+		}
+	}
+
+	public void removeForce(GameObject gameObj) {
+		gameObj.GetComponent<ConstantForce>().enabled = false;
+	}
 }
 ```
-通过`cam.ScreenPointToRay(Input.mousePosition)`我们得到了一条射线，从摄像机摄像鼠标点击的方向。`Physics.Raycast(ray, out hit)`将这条射线发射出去，如果射线击中了物体则返回true，并将射线击中的信息保存在参数`hit`中，你可以从中获得击中的物体、击中的位置等信息。
+这个管理器的实现非常简单，只需要负责增加\移除ConstantForce组件就可以了。
+> 要使物体受到力的影响，必须先让他具有Rigidbody（刚体）组件。对物理引擎的使用，网上有很多教程。你可以[查看官方文档](https://docs.unity3d.com/Manual/PhysicsSection.html)或[学习其他作者的博客](http://www.cnblogs.com/edisonchou/p/3546724.html)。
 
-out是一个关键字，类似于传递引用、只不过函数会将out传进去的参数清空，再放入数据。也就是说如果使用ref关键字，信息有进有出；使用out，信息只出不进。
 ****
-#### Shooter
-在我们的游戏中，Shooter就是用来监测鼠标点击并发射射线的，挂载在枪支对象上，射线击中UFO或地面就通知sceneController。
+# 适配器模式
+如何将两种动作管理器有机地结合起来呢？让FirstController（场景控制器）同时拥有两个变量，分别指向这两个动作管理器吗？这样不好，如果我们以后又要增加新的动作管理器呢？如果我们要增加新的飞碟工厂类呢？这样的话FirstController就需要管理太多**功能相同的部件**了，FirstController会越来越臃肿，可扩展性很差。
+
+我们希望FirstController只需要**为同一个用途的所有组件保存1个变量**。
+
+这就是为什么我们需要适配器模式。
+让我通过一个生活中的例子来解释适配器模式：现在大部分的的平板电脑只有一个USB接口，现在我想在我的平板电脑上同时使用键盘和鼠标，怎么办？很简单，买一个这样的USB扩展器：
+![USB扩展器就是一种适配器](http://upload-images.jianshu.io/upload_images/4888929-5fcb64b56209a3a8.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+将USB扩展器插在平板的USB接口上，然后将键盘、鼠标插在USB扩展器的USB接口上，你就可以同时使用键盘和鼠标了！
+
+在这个例子中，我们的平板就像是FirstController，两个输入设备就像是两个动作管理器。要将两个动作管理器同时接入FirstController，我们要实现一个适配器，让FirstController连接适配器，然后让适配器连接两个动作管理器。
+
+我们先将FirstController中原本保存ActionManager的变量删掉，然后添加这一行：
 ```
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using Com.MyGameFramework;
+ActionManagerTarget actionManagerTarget;
+```
+ActionManagerTarget是一个接口，它就相当于平板电脑上的USB接口：
+```
+public interface ActionManagerTarget {
+	void switchActionMode();
+	
+	void addAction(GameObject gameObj, Dictionary<string, object> option);
 
-public class Shooter : MonoBehaviour
-{
-    public Camera cam;
-    private FirstController sceneController;
-    LayerMask layerMask;    // 指定一些layer层，下面我们让射线只能击中这些layer中的物体
+	void addActionForArr(GameObject[] Arr, Dictionary<string, object> option);
 
-    public GameObject muzzleFlash;  // 枪口火焰的预制，我已经将预制拖动到了Inspector中
-    bool muzzleFlashEnable = false; // 是否显示枪口火焰
-    float muzzleFlashTimer = 0; // 记录枪口火焰已经显示了多久
-    const float muzzleFlashMaxTime = 0.1F;  // 枪口火焰每次显示0.1秒
+	void addActionForArr(UFOController[] Arr, Dictionary<string, object> option);
 
-    void Awake()
-    {
-        muzzleFlash.SetActive(false);
-        layerMask = LayerMask.GetMask("Shootable", "RayFinish");
-        // 指定这两个层，Shootable中是飞碟，RayFinish中的是地面Terrain
-    }
-
-    void Start()
-    {
-        cam = Camera.main;
-        sceneController = Director.getInstance().currentSceneController as FirstController;
-    }
-
-    void Update()
-    {
-        if (Input.GetButton("Fire1"))   // Fire1按键是鼠标左键或左Ctrl键
-        {
-            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            // layerMask参数使这个射线只能打中指定layer的物体
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
-            {
-                if (hit.transform.gameObject.layer == 8)
-                {  // 通过hit获取到了击中物体所在的层
-                    UFOController UFOCtrl = hit.transform.GetComponent<UFOScript>().ctrl;
-                    sceneController.UFOIsShot(UFOCtrl); // 通知sceneController
-                }
-                else if (hit.transform.gameObject.layer == 9)
-                {
-                    sceneController.GroundIsShot(hit.point); // 通知sceneController
-                }
-            }
-        }
-
-        if (muzzleFlashEnable == false) // 显示枪口火焰
-        {
-            muzzleFlashEnable = true;
-            muzzleFlash.SetActive(true);
-        }
-        if (muzzleFlashEnable)      // 计时，枪口火焰显示0.1秒后消失
-        {
-            muzzleFlashTimer += Time.deltaTime;
-            if (muzzleFlashTimer >= muzzleFlashMaxTime)
-            {
-                muzzleFlashEnable = false;
-                muzzleFlash.SetActive(false);
-                muzzleFlashTimer = 0;
-            }
-        }
-    }
+	void removeActionOf(GameObject obj, Dictionary<string, object> option);
 }
 ```
-关键的代码我都已经注释说明。物体被击中以后的事情交给sceneController来安排，Shooter只专注于“射击”的功能。
-****
-# 使用工厂来获取、回收对象
-如果每一次我们需要飞碟的时候，我们都使用GameObject.Instantiate，会消耗大量的系统资源。所以我们现在使用一个工厂来回收利用使用完毕的UFO，下次需要UFO的时候让它出现在应该的位置就可以了，减少了Instantiate和Destroy的调用。
-
+然后实现一个适配器类ActionManagerAdapter，这个类要实现这个接口：
 ```
-public class UFOFactory : MonoBehaviour
-{
-    Queue<UFOController> freeQueue; // 储存空闲状态的UFO
-    List<UFOController> usingList;  // 储存正在使用的UFO
+public class ActionManagerAdapter: ActionManagerTarget {
+	FirstSceneActionManager normalAM;
+	PhysicsActionManager PhysicsAM;
 
-    GameObject originalUFO; // UFO的原型，以后创建UFO就克隆这个对象
+	int whichActionManager = 0; // 0->normal, 1->physics
 
-    int count = 0;
-    void Awake()
-    {
-        freeQueue = new Queue<UFOController>();
-        usingList = new List<UFOController>();
+	public ActionManagerAdapter(GameObject main) {
+		normalAM = main.AddComponent<FirstSceneActionManager>();
+		PhysicsAM = main.AddComponent<PhysicsActionManager>();
+		whichActionManager = 0;
+	}
 
-        originalUFO = Instantiate(Resources.Load("ufo", typeof(GameObject))) as GameObject;
-        originalUFO.SetActive(false);
-    }
+	public void switchActionMode() {
+		whichActionManager = 1-whichActionManager;
+	}
 
-    public UFOController produceUFO(UFOAttributes attr)
-    {
-        UFOController newUFO;
-        if (freeQueue.Count == 0)       // 如果没有UFO空闲，则克隆一个对象
-        {
-            GameObject newObj = GameObject.Instantiate(originalUFO);
-            newUFO = new UFOController(newObj);
-            newObj.transform.position += Vector3.forward * Random.value * 5;
-            count++;
-        }
-        else                            // 如果有UFO空闲，则取出这个UFO
-        {
-            newUFO = freeQueue.Dequeue();
-        }
-        newUFO.setAttr(attr);           // 将UFO的颜色速度大小设置成参数指定的样子
-        usingList.Add(newUFO);          // 将UFO加入使用中的队列
-        newUFO.appear();
-        return newUFO;
-    }
+	public void addAction(GameObject gameObj, Dictionary<string, object> option) {
+		if (whichActionManager == 0)
+		//	use normalAM
+		{
+			Debug.Log("use normalAM");
+			normalAM.addRandomAction(gameObj, (float)option["speed"]);
+		}
 
-    public UFOController[] produceUFOs(UFOAttributes attr, int n)
-    {
-        // 一次性产生n个UFO
+		else
+		//	use PhysicsAM
+		{
+			Debug.Log("use PhysicsAM");
+			PhysicsAM.addForce(gameObj, (Vector3)option["force"]);
+		}
+	}
 
-        UFOController[] arr = new UFOController[n];
-        for (int i = 0; i < n; i++)
-        {
-            arr[i] = produceUFO(attr);
-        }
-        return arr;
-    }
+	public void addActionForArr(GameObject[] Arr, Dictionary<string, object> option) {
+		if (whichActionManager == 0)
+		//	use normalAM
+		{
+			Debug.Log("use normalAM");
+			float speed = (float)option["speed"];
+			foreach (GameObject gameObj in Arr) {
+				normalAM.addRandomAction(gameObj, speed);
+			}
+		}
 
-    public void recycle(UFOController UFOCtrl)
-    {
-        // 回收一个UFO，将其加入空闲队列
-        UFOCtrl.disappear();
-        usingList.Remove(UFOCtrl);
-        freeQueue.Enqueue(UFOCtrl);
-    }
+		else
+		//	use PhysicsAM
+		{
+			Debug.Log("use PhysicsAM");
+			Vector3 force = (Vector3)option["force"];
+			foreach (GameObject gameObj in Arr) {
+				PhysicsAM.addForce(gameObj, force);
+			}
+		}
+	}
 
-    public void recycleAll()
-    {
-        while(usingList.Count != 0)
-        {
-            recycle(usingList[0]);
-        }
-    }
+	public void addActionForArr(UFOController[] Arr, Dictionary<string, object> option) {
+		if (whichActionManager == 0)
+		//	use normalAM
+		{
+			Debug.Log("use normalAM");
+			float speed = (float)option["speed"];
+			foreach (UFOController ctrl in Arr) {
+				normalAM.addRandomAction(ctrl.getObj(), speed);
+			}
+		}
 
-    public List<UFOController> getUsingList()
-    {
-        return usingList;
-    }
+		else
+		//	use PhysicsAM
+		{
+			Debug.Log("use PhysicsAM");
+			Vector3 force = (Vector3)option["force"];
+			foreach (UFOController ctrl in Arr) {
+				PhysicsAM.addForce(ctrl.getObj(), force);
+			}
+		}
+	}
+
+	public void removeActionOf(GameObject gameObj, Dictionary<string, object> option){
+		if (whichActionManager == 0)
+		//	use normalAM
+		{
+			Debug.Log("use normalAM");
+			normalAM.removeActionOf(gameObj);
+		}
+
+		else
+		//	use PhysicsAM
+		{
+			Debug.Log("use PhysicsAM");
+			PhysicsAM.removeForce(gameObj);
+		}
+	}
 }
 ```
-除了UFOFactory以外，还有一个ExplosionFactory，作用一样，用来获取和回收“爆炸对象”，因为爆炸也像飞碟一样，频繁产生、消失的。ExplosionFactory的实现很相似，代码我就不放在这里了，要查看的话下载我的项目就可以了。
-****
-# 使用场景控制器协调各个场景组件
-FirstController是场景中最高级别的控制器，所有的部件相互之间不会直接通信，只能与FirstController直接通信，这样可以大大降低各个组件之间的耦合，当我们更改某个部件时，最多只需要修改一下FirstController中的代码就可以了。
-![场景控制器所控制的部件](http://upload-images.jianshu.io/upload_images/4888929-723d0857d2b97af4.gif?imageMogr2/auto-orient/strip)
+可以看出，我们在实现适配器的时候，将两个动作管理器“焊死”在适配器上了，你还可以自己尝试，实现一个可以“自由插拔”的适配器:)。
 
+然后我们在FirstController的构造函数中实例化一个适配器（相当于将USB扩展器插在平板电脑上）：
+```
+actionManagerTarget = new ActionManagerAdapter(gameObject);
+```
+最后不要忘了在Update中监测用户鼠标的右键输入，切换动作管理模式。最终的FirstController是这样的：
 ```
 public class FirstController : MonoBehaviour, SceneController
 {
     Director director;
+
     UFOFactory UFOfactory;
 
     ExplosionFactory explosionFactory;
-    FirstSceneActionManager actionManager;
+
+    ActionManagerTarget actionManagerTarget;
+
+    bool switchAMInNextRound = false;
 
     Scorer scorer;
 
     DifficultyManager difficultyManager;
 
     float timeAfterRoundStart = 10;
+
     bool roundHasStarted = false;
+
+    FirstCharacterController firstCharacterController;
+
+    Text hint;
 
     void Awake()
     {
@@ -210,7 +210,8 @@ public class FirstController : MonoBehaviour, SceneController
         director = Director.getInstance();
         director.currentSceneController = this;
 
-        actionManager = gameObject.AddComponent<FirstSceneActionManager>();
+        // actionManager = gameObject.AddComponent<FirstSceneActionManager>();
+        actionManagerTarget = new ActionManagerAdapter(gameObject);
 
         UFOfactory = gameObject.AddComponent<UFOFactory>();
 
@@ -221,12 +222,15 @@ public class FirstController : MonoBehaviour, SceneController
 
 
         loadResources();
+        Physics.IgnoreLayerCollision(LayerMask.NameToLayer("Shootable"), LayerMask.NameToLayer("Shootable"), true);
     }
     public void loadResources()
     {
         // 初始化场景中的物体
-        new FirstCharacterController();
+        firstCharacterController = new FirstCharacterController();
         Instantiate(Resources.Load("Terrain"));
+        hint = (Instantiate(Resources.Load("ShowResult")) as GameObject).GetComponentInChildren<Text>();
+        hint.text = "";
     }
 
     public void Start()
@@ -242,36 +246,51 @@ public class FirstController : MonoBehaviour, SceneController
 
         if (roundHasStarted && checkAllUFOIsShot()) // 检查是否所有UFO都已经被击落
         {
-            print("All UFO is shot down! Next round in 3 sec");
+            hint.text = "All UFO has crashed in this round! Next round in 3 sec";
             roundHasStarted = false;
             Invoke("roundStart", 3);
             difficultyManager.setDifficultyByScore(scorer.getScore());
         }
         else if (roundHasStarted && checkTimeOut()) // 检查这一轮是否已经超时
         {
-            print("Time out! Next round in 3 sec");
+            hint.text = "Time out! Next round in 3 sec";
             roundHasStarted = false;
             foreach (UFOController ufo in UFOfactory.getUsingList())
             {
-                actionManager.removeActionOf(ufo.getObj());
+                actionManagerTarget.removeActionOf(ufo.getObj(), new Dictionary<string, object>());
             }
             UFOfactory.recycleAll();
             Invoke("roundStart", 3);
             difficultyManager.setDifficultyByScore(scorer.getScore());
+        }
+        if (Input.GetButtonDown("Fire2")) {
+            hint.text = "Action of UFOs will change in the next round!";
+            switchAMInNextRound = true;
         }
     }
 
     void roundStart()
     {   
         // 开始新的一轮
+        if (switchAMInNextRound) {
+            switchAMInNextRound = false;
+            actionManagerTarget.switchActionMode();
+        }
+
         roundHasStarted = true;
         timeAfterRoundStart = 0;
         UFOController[] ufoCtrlArr = UFOfactory.produceUFOs(difficultyManager.getUFOAttributes(), difficultyManager.UFONumber);
         for (int i = 0; i < ufoCtrlArr.Length; i++)
         {
             ufoCtrlArr[i].appear();
+            ufoCtrlArr[i].setPosition(getRandomUFOPosition());
         }
-        actionManager.addRandomActionForArr(ufoCtrlArr, ufoCtrlArr[0].attr.speed);
+
+        actionManagerTarget.addActionForArr(ufoCtrlArr, new Dictionary<string, object>() {
+            {"speed", ufoCtrlArr[0].attr.speed},
+            {"force", difficultyManager.getGravity()}
+        });
+        hint.text = "";
     }
 
     bool checkTimeOut()
@@ -292,7 +311,7 @@ public class FirstController : MonoBehaviour, SceneController
     {
         // 响应UFO被击中的事件
         scorer.record(difficultyManager.getDifficulty());
-        actionManager.removeActionOf(UFOCtrl.getObj());
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>());
         UFOfactory.recycle(UFOCtrl);
         explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
     }
@@ -301,31 +320,49 @@ public class FirstController : MonoBehaviour, SceneController
         // 响应地面被击中的事件（直接产生一个爆炸）
         explosionFactory.explodeAt(pos);
     }
+
+    public void UFOCrash(UFOController UFOCtrl) {
+        actionManagerTarget.removeActionOf(UFOCtrl.getObj(), new Dictionary<string, object>());
+        UFOfactory.recycle(UFOCtrl);
+        explosionFactory.explodeAt(UFOCtrl.getObj().transform.position);
+    }
+
+    public Vector3 getRandomUFOPosition() {
+        Vector3 relativeToCharacter = new Vector3(Random.Range(-10, 10), Random.Range(10, 15), Random.Range(-10, 10));
+        return firstCharacterController.getPosition()+relativeToCharacter;
+    }
 }
 ```
-****
-# 其他的类
-其他的类实现非常简单，都是三、四十行代码，也没有涉及新的知识，我就不在这里一一讲解了，大家可以下载我的代码自己查看。
-****
-# 可以做的改进
-* 设计失败的规则，比如规定时间内没拿到多少分就失败。
-* 设计一套UI，让用户可以控制游戏的难度。
-* “子弹”发射的速度太快了，如果按住鼠标的话，会每一帧发出一条射线。让射速慢下来吧。
-* 增加换弹机制。
-* 让飞碟在主角身边生成，或者会自动飞到主角附近。
+注意我没有在监测到鼠标右键输入以后马上切换动作管理模式，而是通过一点小技巧，延迟到下一轮开始的时候再切换。这是因为如果立刻切换，这一轮的“动作取消”会出很大的问题。你仔细想想，这一轮开始的时候，我们使用正常动作管理器给每个飞碟添加了一个普通的动作，而取消动作的时候却使用物理动作管理器！这样，飞碟上的普通动作就无法被回收，下一轮开始的时候飞碟依然在来回移动。
+
+
+> ActionManagerAdapter使用了一个非常灵活的方式来接收参数：`Dictionary<string, object> option` 其中的object可以传递任何类型的值，甚至是int、float原始类型。因为FirstController不知道当前的运动模式是什么，不知道应该给ActionManagerAdapter传递speed参数还是force参数，于是干脆两个都传进去，让ActionManagerAdapter自己选择：
+```
+actionManagerTarget.addActionForArr(ufoCtrlArr, new Dictionary<string, object>() {
+            {"speed", ufoCtrlArr[0].attr.speed},
+            {"force", difficultyManager.getGravity()}
+        });
+```
 
 ****
-# 感悟
-我们在上一个游戏的时候，我们定义了几个关于动作的类（如ObjAction、MoveToAction、SequenceAction、ActionManager）。在这个游戏中，我可以几乎一字未改地复制到了这个游戏中（后来调整了一些参数的顺序），为什么能够复用如此之多的代码？
+# 适配器模式补充说明
+#### 适配器模式定义
+适配器模式(Adapter Pattern) ：将一个接口转换成客户希望的另一个接口，适配器模式使接口不兼容的那些类可以一起工作，其别名为包装器(Wrapper)。
+> 需要接入2个类，而客户类只提供1个接口，这也是一种“接口不兼容”。
 
-因为关于动作的基本类与上一个游戏的业务逻辑没有任何关系，这些代码是很容易复用的。我们上一个游戏的业务逻辑封装在了一个`FirstSceneActionManager`类中，通过调用这些基本类的API来控制动作。
+#### 适配器模式的组成
+* Target：目标抽象类（USB接口）
+* Adapter：适配器类（USB扩展器）
+* Adaptee：适配者类（鼠标、键盘、U盘）
+* Client：客户类（平板电脑）
 
-在这个游戏中，我们也是只需要重新写`FirstSceneActionManager`类就可以了，底层的代码不用改变。
+适配器的作用，除了我们刚才所说的，将多个类接入同一个接口以外，还有转接“不兼容”接口的作用。比如说，如果我们想将U盘插入USB-typeC接口中，我们要买另一种适配器：
 
-这就告诉我们在实现底层代码的时候不要实现具体的业务逻辑，我们只实现抽象的、通用的、基础的一些功能，当我们针对游戏需要实现业务逻辑的时候，通过调用这些底层的基本功能来完成具体的功能，这样可以让代码的复用最大化。
+![USB转接器也是一种适配器](http://upload-images.jianshu.io/upload_images/4888929-e771a38219aad49c.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-在实现底层的类的时候必须要从长远来考虑，我们将来可能需要底层来做什么？这一套API是否能满足我所有可能的需求？怎么设计API来让它们使用起来更方便？
+这个适配器也解决了“接口不兼容”的问题。当“客户类提供的接口”与“适配者类”不兼容的时候，可以实现一个适配器，让适配器实现“客户类提供的接口”，并在这个适配器中调用“适配者类”的方法。
 
-**如果你以后实现各种业务逻辑的时候，发现一点也不用修改底层的代码，就说明底层这套API实现足够的健壮、通用了。**
+如果还想深入学习有关适配器模式的内容，可以看看[这个网站](http://design-patterns.readthedocs.io/zh_CN/latest/structural_patterns/adapter.html)。
 
-**职责分离**也有利于代码的模块化、减少耦合，比如说不要在工厂中直接给产生的飞碟添加动作，而要将飞碟传递给FirstController以后，让FirstController去调用动作管理器来添加。这样就将工厂和动作管理器之间的耦合降低了。否则，你将来想给飞碟添加更多种运动方式，却发现飞碟一旦生成就会按照旧方式来运动，这样你就要修改更多的代码。
+****
+谢谢阅读！
