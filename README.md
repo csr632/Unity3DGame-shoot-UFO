@@ -1,6 +1,6 @@
 # Unity3DGame-shoot-UFO
 A simple Unity3D game
-该项目还有后续增强，在[另一个分支](https://github.com/csr632/Unity3DGame-shoot-UFO/tree/Improvement1_PhysicalUFO)。
+> 看完了这篇文章以后，可以在[另一个分支](https://github.com/csr632/Unity3DGame-shoot-UFO/tree/Improvement1_PhysicalUFO)查看它的增强版。
 
 # 任务概述
 这次我们重新制作一个打飞碟小游戏。游戏每一轮生成10个飞碟，每个飞碟随机飞行，玩家要在这一轮结束之前尽快地射击飞碟，击中了就加分，分数达到一定的程度就提升难度。这个游戏很基本，也很简单，我们通过它来学习玩家输入、使用射线、使用工厂来获取和回收对象，并且体会代码复用的技巧。
