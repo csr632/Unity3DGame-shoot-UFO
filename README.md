@@ -1,5 +1,6 @@
 # Unity3DGame-shoot-UFO
 A simple Unity3D game
+该项目还有后续增强，在[另一个分支](https://github.com/csr632/Unity3DGame-shoot-UFO/tree/Improvement1_PhysicalUFO)。
 
 # 任务概述
 这次我们重新制作一个打飞碟小游戏。游戏每一轮生成10个飞碟，每个飞碟随机飞行，玩家要在这一轮结束之前尽快地射击飞碟，击中了就加分，分数达到一定的程度就提升难度。这个游戏很基本，也很简单，我们通过它来学习玩家输入、使用射线、使用工厂来获取和回收对象，并且体会代码复用的技巧。
@@ -333,4 +334,4 @@ public class FirstController : MonoBehaviour, SceneController
 **职责分离**也有利于代码的模块化、减少耦合。比如说不要在工厂中直接给产生的飞碟添加动作（因为管理动作不是工厂的职责），而要将飞碟传递给FirstController以后，让FirstController去调用动作管理器来添加。这样就将工厂和动作管理器之间的耦合降低了。将来你想要给飞碟添加更多种运动方式的时候，只需要更改动作管理器类就可以了，完全不用管工厂类。否则，你会发现飞碟一旦生成就会按照旧方式来运动，这样你就要修改更多的代码（既要改动工厂类、又要改动动作管理器类）。
 
 ****
-感谢阅读！
+感谢阅读！该项目还有后续增强，在[另一个分支](https://github.com/csr632/Unity3DGame-shoot-UFO/tree/Improvement1_PhysicalUFO)。
